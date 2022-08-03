@@ -1,0 +1,222 @@
+---
+title: "Parametric Bootstrap"
+author: "Christian Diangco"
+date: '2022-06-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Parameters}
+library(kableExtra)
+set.seed(12345)
+# Dow Jones, S&P500, Nasdaq
+pp = c(0.20,0.50,0.30)	 # weight
+nd=rmultinom(1,10000,pp)[ ,1]	# sample size		
+k = c(7,7,7)  # k degrees of freedom
+s = c(0.967,1.153,1.692)    # scale
+m = c(0.850 ,1.00 ,1.411)   # center/mean
+
+n = 1500  # sample size
+B = 10000  # number of bootstrap samples
+```
+
+Bootstrapping estimates the properties of an estimator: in our case we are looking at estimators for the mean and variance. I'm creating histograms for the distributions of estimates and computing various properties of the estimators for each distribution. I will do this for multiple smaple sizes as well.
+
+## Mean: Parametric Bootstrap
+
+```{r Parametric Bootstrap}
+# Parametric bootstrap of the mean and variance
+param_boot <- function(n, B, s, k, m) {
+  # Create sample
+  sample_vals = s*rt(n, k) + m
+  
+  # Mean of sample
+  sample_mean = mean(sample_vals)
+  
+  # Variance of sample
+  sample_var = var(sample_vals)
+  
+  # Vector for storing bootstrap estimates of mean
+  BT_mean_vec = numeric(B)
+  
+  # Vector for storing bootstrap estimates of variance
+  BT_var_vec = numeric(B)
+  
+  # Empirical Bootstrap
+  for (i in 1:B) {
+    # Create bootstrap sample from normal dist with sample mean and sd as parameters
+    BT_sample = rnorm(n, sample_mean, sqrt(sample_var))
+    BT_mean = mean(BT_sample) # Mean
+    BT_var = var(BT_sample) # Variance
+    BT_mean_vec[i] = BT_mean
+    BT_var_vec[i] = BT_var
+  }
+  
+  return (list(BT_mean=BT_mean_vec, BT_var=BT_var_vec, s_mean=sample_mean,
+               s_var=sample_var))
+}
+```
+
+## Dow Jones
+
+```{r Dow Jones}
+DJ = param_boot(n, B, s[1], k[1], m[1])
+
+# ------Mean--------
+hist(DJ$BT_mean,
+     main=paste("Histogram of Bootstrap Means - Dow Jones (n = ", n, ")", sep=""),
+     col="salmon",
+     xlab="Mean",
+     freq=FALSE,
+     breaks=20)
+abline(v=DJ$s_mean, lwd=3)
+
+
+DJ_mean_CI = paste("[", quantile(DJ$BT_mean, .025), ", ", quantile(DJ$BT_mean, .975), "]", sep="")
+DJ_mean_SE = sd(DJ$BT_mean)
+DJ_mean_var = var(DJ$BT_mean)
+DJ_mean_MSE = mean((DJ$s_mean - DJ$BT_mean)^2)
+DJ_mean_bias = mean((DJ$s_mean - DJ$BT_mean)^2) - var(DJ$BT_mean)
+DJ_mean_IQR = IQR(DJ$BT_mean)
+
+# -----Variance------
+hist(DJ$BT_var,
+     main=paste("Histogram of Bootstrap Variances - Dow Jones (n = ", n, ")", sep=""),
+     col="salmon",
+     xlab="Variance",
+     freq=FALSE,
+     breaks=20)
+abline(v=DJ$s_var, lwd=3)
+
+
+
+DJ_var_CI = paste("[", quantile(DJ$BT_var, .025), ", ", quantile(DJ$BT_var, .975), "]", sep="")
+DJ_var_SE = sd(DJ$BT_var)
+DJ_var_var = var(DJ$BT_var)
+DJ_var_MSE = mean((DJ$s_var - DJ$BT_var)^2)
+DJ_var_bias = mean((DJ$s_var - DJ$BT_var)^2) - var(DJ$BT_var)
+DJ_var_IQR = IQR(DJ$BT_var)
+
+```
+
+## S&P500
+
+```{r S&P500}
+SP = param_boot(n, B, s[2], k[2], m[2])
+
+# ------Mean--------
+hist(SP$BT_mean,
+     main=paste("Histogram of Bootstrap Means - S&P500 (n = ", n, ")", sep=""),
+     col="lavender",
+     xlab="Mean",
+     freq=FALSE,
+     breaks=20)
+abline(v=SP$s_mean, lwd=3)
+
+
+
+SP_mean_CI = paste("[", quantile(SP$BT_mean, .025), ", ", quantile(SP$BT_mean, .975), "]", sep="")
+SP_mean_SE = sd(SP$BT_mean)
+SP_mean_var = var(SP$BT_mean)
+SP_mean_MSE = mean((SP$s_mean - SP$BT_mean)^2)
+SP_mean_bias = mean((SP$s_mean - SP$BT_mean)^2) - var(SP$BT_mean)
+SP_mean_IQR = IQR(SP$BT_mean)
+
+
+# -----Variance------
+hist(SP$BT_var,
+     main=paste("Histogram of Bootstrap Variances - S&P500 (n = ", n, ")", sep=""),
+     col="lavender",
+     xlab="Variance",
+     freq=FALSE,
+     breaks=20)
+abline(v=SP$s_var, lwd=3)
+
+
+SP_var_CI = paste("[", quantile(SP$BT_var, .025), ", ", quantile(SP$BT_var, .975), "]", sep="")
+SP_var_SE = sd(SP$BT_var)
+SP_var_var = var(SP$BT_var)
+SP_var_MSE = mean((SP$s_var - SP$BT_var)^2)
+SP_var_bias = mean((SP$s_var - SP$BT_var)^2) - var(SP$BT_var)
+SP_var_IQR = IQR(SP$BT_var)
+
+```
+
+## Nasdaq
+
+```{r Nasdaq}
+NQ = param_boot(n, B, s[3], k[3], m[3])
+
+# ------Mean--------
+hist(NQ$BT_mean,
+     main=paste("Histogram of Bootstrap Means - Nasdaq (n = ", n, ")", sep=""),
+     col="palegreen",
+     xlab="Mean",
+     freq=FALSE,
+     breaks=20)
+abline(v=NQ$s_mean, lwd=3)
+
+
+NQ_mean_CI = paste("[", quantile(NQ$BT_mean, .025), ", ", quantile(NQ$BT_mean, .975), "]", sep="")
+NQ_mean_SE = sd(NQ$BT_mean)
+NQ_mean_var = var(NQ$BT_mean)
+NQ_mean_MSE = mean((NQ$s_mean - NQ$BT_mean)^2)
+NQ_mean_bias = mean((NQ$s_mean - NQ$BT_mean)^2) - var(NQ$BT_mean)
+NQ_mean_IQR = IQR(NQ$BT_mean)
+
+
+
+# -----Variance------
+hist(NQ$BT_var,
+     main=paste("Histogram of Bootstrap Variances - Nasdaq (n = ", n, ")", sep=""),
+     col="palegreen",
+     xlab="Variance",
+     freq=FALSE,
+     breaks=20)
+abline(v=NQ$s_var, lwd=3)
+
+
+NQ_var_CI = paste("[", quantile(NQ$BT_var, .025), ", ", quantile(NQ$BT_var, .975), "]", sep="")
+NQ_var_SE = sd(NQ$BT_var)
+NQ_var_var = var(NQ$BT_var)
+NQ_var_MSE = mean((NQ$s_var - NQ$BT_var)^2)
+NQ_var_bias = mean((NQ$s_var - NQ$BT_var)^2) - var(NQ$BT_var)
+NQ_var_IQR = IQR(NQ$BT_var)
+
+```
+
+```{r Results}
+# Mean
+kable_styling(
+  kbl(
+    data.frame(
+      n = c(n, "", ""),
+      Index = c("Dow Jones", "S&P 500", "Nasdaq"),
+      CI = c(DJ_mean_CI, SP_mean_CI, NQ_mean_CI),
+      SE = c(DJ_mean_SE, SP_mean_SE, NQ_mean_SE),
+      Var = c(DJ_mean_var, SP_mean_var, NQ_mean_var),
+      MSE = c(DJ_mean_MSE, SP_mean_MSE, NQ_mean_MSE),
+      Bias = c(DJ_mean_bias, SP_mean_bias, NQ_mean_bias),
+      IQR = c(DJ_mean_IQR, SP_mean_IQR, NQ_mean_IQR)
+    )
+  )
+)
+# Variance
+kable_styling(
+  kbl(
+    data.frame(
+      n = c(n, "", ""),
+      Index = c("Dow Jones", "S&P 500", "Nasdaq"),
+      CI = c(DJ_var_CI, SP_var_CI, NQ_var_CI),
+      SE = c(DJ_var_SE, SP_var_SE, NQ_var_SE),
+      Var = c(DJ_var_var, SP_var_var, NQ_var_var),
+      MSE = c(DJ_var_MSE, SP_var_MSE, NQ_var_MSE),
+      Bias = c(DJ_var_bias, SP_var_bias, NQ_var_bias),
+      IQR = c(DJ_var_IQR, SP_var_IQR, NQ_var_IQR)
+    )
+  )
+)
+```
